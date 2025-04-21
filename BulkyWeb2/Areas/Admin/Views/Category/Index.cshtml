@@ -1,0 +1,43 @@
+﻿@model List<Category>
+
+<div class="container">
+    <div class="row pt-4">
+        <div class="col-6">
+            <h2 class="text-primary">Category List</h2>
+        </div>
+        <div class="col-6 text-end">
+            <a asp-action="create" asp-controller="category" class="btn btn-primary">
+                Create new category
+            </a>
+        </div>
+    </div>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Category Name</th>
+                <th>Display Order</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var obj in Model.OrderBy(u => u.DisplayOrder))
+            {
+                <tr>
+                    <td>@obj.Name</td>
+                    <td>@obj.DisplayOrder</td>
+                    <td>
+
+                        <div class="w-75 btn-group role="group">
+                            <a asp-controller="Category" asp-route-id="@obj.Id" asp-action="Edit">Edit</a>
+                        </div>
+
+                        <div class="w-75 btn-group role="group">
+                            <a asp-controller="Category" asp-route-id="@obj.Id" asp-action="Delete">Delete</a>
+                        </div>
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
