@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BulkyWeb2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241108114045_91")]
-    partial class _91
+    [Migration("20250427154924_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

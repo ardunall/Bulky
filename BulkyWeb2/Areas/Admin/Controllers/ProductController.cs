@@ -73,27 +73,30 @@ namespace BulkyWeb2.Areas.Admin.Controllers
                 if(file != null)
                 {
                     string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                    string productPath = Path.Combine(wwwRootPath, @"images\product");
+                    string productPath = Path.Combine(wwwRootPath, "images", "product");
+
+                    // Ensure the directory exists
+                    if (!Directory.Exists(productPath))
+                    {
+                        Directory.CreateDirectory(productPath);
+                    }
 
                     if(!string.IsNullOrEmpty(vm.Product.ImageUrl))
                     {
-
-                        var Oldimagespath = Path.Combine(wwwRootPath, vm.Product.ImageUrl.TrimStart('\\'));
+                        var Oldimagespath = Path.Combine(wwwRootPath, vm.Product.ImageUrl.TrimStart('/'));
                     
                         if(System.IO.File.Exists(Oldimagespath))
                         {
-
                             System.IO.File.Delete(Oldimagespath);
                         }
-                    
                     }
 
-            
-                    using ( var fileStream = new FileStream(Path.Combine(productPath, fileName),FileMode.Create))
+                    string filePath = Path.Combine(productPath, fileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
                     {
                         file.CopyTo(fileStream);
                     }
-                    vm.Product.ImageUrl = @"\images\product\" + fileName;
+                    vm.Product.ImageUrl = "/images/product/" + fileName;
 
 
 				}
@@ -148,7 +151,7 @@ namespace BulkyWeb2.Areas.Admin.Controllers
                 return Json(new { success  = false , message = "Error while deleting"});
             }
 
-            var Oldimagespath = Path.Combine(_webHostEnvironment.WebRootPath, productdelete.ImageUrl.TrimStart('\\'));
+            var Oldimagespath = Path.Combine(_webHostEnvironment.WebRootPath, productdelete.ImageUrl.TrimStart('/'));
 
             if (System.IO.File.Exists(Oldimagespath))
             {

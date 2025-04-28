@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BulkyWeb2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241107195033_16")]
-    partial class _16
+    [Migration("20250427161532_AddIdentityTables")]
+    partial class AddIdentityTables
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -96,6 +96,38 @@ namespace BulkyWeb2.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Companies");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            City = "Tech city",
+                            Name = "Tech Solutaion",
+                            PhoneNumber = "32901321321",
+                            PostalCode = "12112",
+                            State = "IL",
+                            StreetAddress = "123 Tech st"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            City = "Vid city",
+                            Name = "Vivid Books",
+                            PhoneNumber = "453543453",
+                            PostalCode = "12232112",
+                            State = "IL",
+                            StreetAddress = "999 Tech st"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            City = "Ankara",
+                            Name = "Readers Club",
+                            PhoneNumber = "3289420338",
+                            PostalCode = "763232",
+                            State = "IL",
+                            StreetAddress = "823 Main st"
+                        });
                 });
 
             modelBuilder.Entity("BulkyWeb2.Models.Product", b =>
@@ -448,6 +480,9 @@ namespace BulkyWeb2.Migrations
                     b.Property<string>("City")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("CompanyId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -460,6 +495,8 @@ namespace BulkyWeb2.Migrations
 
                     b.Property<string>("StreetAddress")
                         .HasColumnType("nvarchar(max)");
+
+                    b.HasIndex("CompanyId");
 
                     b.HasDiscriminator().HasValue("ApplicationUser");
                 });
@@ -524,6 +561,15 @@ namespace BulkyWeb2.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("BulkyWeb2.Models.ApplicationUser", b =>
+                {
+                    b.HasOne("BulkyWeb2.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId");
+
+                    b.Navigation("Company");
                 });
 #pragma warning restore 612, 618
         }

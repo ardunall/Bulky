@@ -1,36 +1,49 @@
 ﻿@model IEnumerable<Product>
 
-<div class="row pb-3">
+<style>
+	.product-card {
+		transition: transform 0.2s;
+	}
+	.product-card:hover {
+		transform: translateY(-5px);
+	}
+	.product-img {
+		height: 200px;
+		object-fit: cover;
+	}
+	.product-title {
+		font-size: 0.9rem;
+		height: 40px;
+		overflow: hidden;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+	}
+	.product-author {
+		font-size: 0.8rem;
+	}
+	.product-price {
+		font-size: 0.8rem;
+	}
+</style>
+
+<div class="row pb-3 g-3">
 	@foreach(var product in Model)
 	{
-		<div class="col-lg-3 col-sm-6">
-			<div class="row p-2">
-				<div class="col-12 p-1">
-					<div class="card border-0 p-2 shadow border-top border-5 rounded">
-						<img src="@product.ImageUrl" class="card-img-top rounded"/>
-						<div class="card-body pb-0">
-							<div class="pl-1">
-								<p class="card-title h5 text-dark opacity-75 text-center text-uppercase">@product.Title</p>
-								<p class="card-title text-danger text-center">by <b>@product.Author</b></p>
-							</div>
-							<div class="pl-1">
-								<p class="text-dark text-opacity-75 text-center">list Price: <span class="text-decoration-line-through">@product.ListPrice.ToString("c")</span></p>
-							</div>
-							<div class="pl-1">
-								<p class="text-dark text-opacity-75 text-center">As low as: <span>@product.Price100.ToString("c")</span></p>
-							</div>
-
-
-						</div>
-						
-						<div>
-							<a asp-action="Details" asp-route-productId="@product.Id" class="btn btn-primary bg-gradient border-0 form-control">Details</a>
-						</div>
-					</div>		
+		<div class="col-lg-2 col-md-3 col-sm-4 col-6">
+			<div class="card h-100 border-0 shadow-sm product-card">
+				<img src="@product.ImageUrl" class="card-img-top product-img"/>
+				<div class="card-body p-2">
+					<h6 class="product-title text-dark mb-1">@product.Title</h6>
+					<p class="product-author text-muted mb-1">by @product.Author</p>
+					<p class="product-price text-muted mb-1">
+						<small class="text-decoration-line-through">@product.ListPrice.ToString("c")</small>
+						<span class="text-danger">@product.Price100.ToString("c")</span>
+					</p>
+					<a asp-action="Details" asp-route-productId="@product.Id" 
+					   class="btn btn-primary btn-sm w-100">Details</a>
 				</div>
 			</div>
 		</div>
 	}
-
-
 </div>

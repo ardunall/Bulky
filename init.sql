@@ -1,0 +1,8 @@
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'BulkyDB')
+BEGIN
+    CREATE DATABASE BulkyDB;
+END
+GO
+
+USE BulkyDB;
+GO 
