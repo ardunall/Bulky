@@ -16,7 +16,7 @@ namespace BulkyWeb2.Services
         private readonly HttpClient _httpClient;
         private readonly ILogger<ChatService> _logger;
         private readonly IUnitOfWork _unitOfWork;
-        private const string OLLAMA_API_URL = "http://ollama:11434/api/generate";
+        private const string OLLAMA_API_URL = "http://ollama:11434/api/chat";
         private const int REQUEST_TIMEOUT_SECONDS = 30;
         private const int MAX_TOKENS = 250;
 
@@ -288,15 +288,18 @@ Her türlü sorunuz için bana doğal dille sorabilirsiniz. Size yardımcı olma
 
                 // Eğer özel komutlarla eşleşmezse, Ollama API'yi kullan
                 var bookInfo = await GetBookInformation();
-                var systemPrompt = $"Sen bir kitap mağazası müşteri temsilcisisin. Türkçe yanıt ver. Mağaza bilgileri: {bookInfo}";
+                var systemPrompt = $"You are a customer representative at a bookstore. Respond in English. Store information: {bookInfo}";
 
                 var requestBody = new
-                {
-                    model = "llama2",
-                    prompt = $"{systemPrompt}\n\nKullanıcı: {message}\nAsistan:",
-                    stream = false,
-                    options = new { temperature = 0.7, top_k = 40, max_tokens = MAX_TOKENS }
-                };
+                        {
+                                model = "mistral",
+                                messages = new[]
+                                {
+                                    new { role = "system", content = systemPrompt },
+                                    new { role = "user", content = message }
+                                },
+                                stream = false
+                            };
 
                 var jsonContent = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
@@ -310,12 +313,12 @@ Her türlü sorunuz için bana doğal dille sorabilirsiniz. Size yardımcı olma
                     
                     if (!httpResponse.IsSuccessStatusCode)
                     {
-                        return "Üzgünüm, şu anda size yardımcı olamıyorum. Lütfen 'yardım' yazarak kullanılabilir komutları görüntüleyin.";
+                        return "Ollama servisine bağlanılamıyor. Lütfen Ollama'nın çalıştığından emin olun. Ollama'yı kurmak için: https://ollama.ai/download";
                     }
 
                     var responseObject = JsonSerializer.Deserialize<OllamaResponse>(responseString);
-                    return responseObject?.response?.Trim() ?? 
-                           "Üzgünüm, yanıt üretemiyorum. Lütfen 'yardım' yazarak kullanılabilir komutları görüntüleyin.";
+                    return responseObject?.message?.content?.Trim() ?? 
+                        "Üzgünüm, yanıt üretemiyorum. Lütfen 'yardım' yazarak kullanılabilir komutları görüntüleyin.";
                 }
                 catch (Exception)
                 {
@@ -331,7 +334,13 @@ Her türlü sorunuz için bana doğal dille sorabilirsiniz. Size yardımcı olma
     }
 
     public class OllamaResponse
-    {
-        public string response { get; set; }
-    }
+{
+    public Message message { get; set; }
+}
+
+public class Message
+{
+    public string role { get; set; }
+    public string content { get; set; }
+}
 } 
