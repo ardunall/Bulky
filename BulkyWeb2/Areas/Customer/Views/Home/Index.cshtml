@@ -8,8 +8,8 @@
 		transform: translateY(-5px);
 	}
 	.product-img {
-		height: 200px;
-		object-fit: cover;
+		height: 300px;
+		object-fit: contain;
 	}
 	.product-title {
 		font-size: 0.9rem;
@@ -36,6 +36,9 @@
 				<div class="card-body p-2">
 					<h6 class="product-title text-dark mb-1">@product.Title</h6>
 					<p class="product-author text-muted mb-1">by @product.Author</p>
+					<p class="text-muted mb-1">
+						<span class="badge bg-primary">@product.Category.Name</span>
+					</p>
 					<p class="product-price text-muted mb-1">
 						<small class="text-decoration-line-through">@product.ListPrice.ToString("c")</small>
 						<span class="text-danger">@product.Price100.ToString("c")</span>

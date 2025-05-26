@@ -17,7 +17,7 @@ namespace BulkyWeb2.Services
         private readonly ILogger<ChatService> _logger;
         private readonly IUnitOfWork _unitOfWork;
         private const string OLLAMA_API_URL = "http://ollama:11434/api/chat";
-        private const int REQUEST_TIMEOUT_SECONDS = 30;
+        private const int REQUEST_TIMEOUT_SECONDS = 60;
         private const int MAX_TOKENS = 250;
 
         public ChatService(
@@ -46,8 +46,7 @@ namespace BulkyWeb2.Services
                 }
                 
                 var bookInfo = new StringBuilder();
-                bookInfo.AppendLine($"{products.Count} kitap, {products.Select(p => p.Category?.Name ?? "Kategorisiz").Distinct().Count()} kategori bulunmaktadır.");
-                bookInfo.AppendLine($"Fiyat aralığı: {products.Min(p => p.Price):C} - {products.Max(p => p.Price):C}");
+                bookInfo.Append($"{products.Count} kitap, {products.Select(p => p.Category?.Name ?? "Kategorisiz").Distinct().Count()} kategori");
                 
                 return bookInfo.ToString();
             }
@@ -66,22 +65,16 @@ namespace BulkyWeb2.Services
                 if (products.Count == 0) return "Henüz kitap bulunmamaktadır.";
 
                 var response = new StringBuilder();
-                response.AppendLine("📚 Mevcut Kitaplarımız:");
-                response.AppendLine("===================");
-
                 foreach (var product in products.OrderBy(p => p.Category?.Name).ThenBy(p => p.Title))
                 {
-                    response.AppendLine($"\n📖 {product.Title}");
-                    response.AppendLine($"✍️ Yazar: {product.Author}");
-                    response.AppendLine($"📑 Kategori: {product.Category?.Name ?? "Kategorisiz"}");
-                    response.AppendLine($"💰 Fiyat: {product.Price:C}");
-                    response.AppendLine("-------------------");
+                    response.Append($"{product.Title} - {product.Author} - {product.Category?.Name ?? "Kategorisiz"} - {product.Price:C}; ");
                 }
 
                 return response.ToString();
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while getting detailed book list");
                 return "Kitap listesi alınırken hata oluştu: " + ex.Message;
             }
         }
@@ -95,21 +88,16 @@ namespace BulkyWeb2.Services
                                       .OrderBy(g => g.Key);
 
                 var response = new StringBuilder();
-                response.AppendLine("📑 Kategorilerimiz:");
-                response.AppendLine("=================");
-
                 foreach (var category in categories)
                 {
-                    response.AppendLine($"\n📚 {category.Key}");
-                    response.AppendLine($"Kitap Sayısı: {category.Count()}");
-                    response.AppendLine($"Fiyat Aralığı: {category.Min(p => p.Price):C} - {category.Max(p => p.Price):C}");
-                    response.AppendLine("-------------------");
+                    response.Append($"{category.Key}: {category.Count()} kitap; ");
                 }
 
                 return response.ToString();
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while getting category list");
                 return "Kategori listesi alınırken hata oluştu: " + ex.Message;
             }
         }
@@ -126,21 +114,16 @@ namespace BulkyWeb2.Services
                     return $"'{categoryName}' kategorisinde kitap bulunamadı.";
 
                 var response = new StringBuilder();
-                response.AppendLine($"📚 {categoryName} Kategorisindeki Kitaplar:");
-                response.AppendLine("================================");
-
                 foreach (var product in products.OrderBy(p => p.Title))
                 {
-                    response.AppendLine($"\n📖 {product.Title}");
-                    response.AppendLine($"✍️ Yazar: {product.Author}");
-                    response.AppendLine($"💰 Fiyat: {product.Price:C}");
-                    response.AppendLine("-------------------");
+                    response.Append($"{product.Title} - {product.Author} - {product.Price:C}; ");
                 }
 
                 return response.ToString();
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while getting books by category");
                 return "Kategori kitapları alınırken hata oluştu: " + ex.Message;
             }
         }
@@ -158,22 +141,16 @@ namespace BulkyWeb2.Services
                     return $"{minPrice:C} - {maxPrice:C} fiyat aralığında kitap bulunamadı.";
 
                 var response = new StringBuilder();
-                response.AppendLine($"💰 {minPrice:C} - {maxPrice:C} Fiyat Aralığındaki Kitaplar:");
-                response.AppendLine("================================");
-
                 foreach (var product in products)
                 {
-                    response.AppendLine($"\n📖 {product.Title}");
-                    response.AppendLine($"✍️ Yazar: {product.Author}");
-                    response.AppendLine($"📑 Kategori: {product.Category?.Name ?? "Kategorisiz"}");
-                    response.AppendLine($"💰 Fiyat: {product.Price:C}");
-                    response.AppendLine("-------------------");
+                    response.Append($"{product.Title} - {product.Author} - {product.Category?.Name ?? "Kategorisiz"} - {product.Price:C}; ");
                 }
 
                 return response.ToString();
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while getting books by price range");
                 return "Fiyat aralığındaki kitaplar alınırken hata oluştu: " + ex.Message;
             }
         }
@@ -184,122 +161,26 @@ namespace BulkyWeb2.Services
             {
                 _logger.LogInformation("Starting request to Ollama API. Message: {Message}", message);
 
-                // Boş mesaj kontrolü
                 if (string.IsNullOrWhiteSpace(message))
                 {
-                    return "Üzgünüm, boş bir mesaj gönderdiniz. Lütfen bir soru sorun veya yardım için 'yardım' yazın.";
+                    return "Üzgünüm, boş bir mesaj gönderdiniz. Lütfen bir soru sorun.";
                 }
 
                 message = message.Trim().ToLower();
-
-                // Kitap listesi için özel yanıtlar
-                if (message == "hangi kitaplar var" || 
-                    message == "kitapları göster" || 
-                    message == "kitaplar" || 
-                    message == "tüm kitaplar")
-                {
-                    return await GetDetailedBookList();
-                }
-
-                // Kategori listesi için özel yanıtlar
-                if (message == "kategoriler" || 
-                    message == "hangi kategoriler var" || 
-                    message == "kategori listesi")
-                {
-                    return await GetCategoryList();
-                }
-
-                // Kategori sorgulama
-                if (message.StartsWith("kategori:") || message.StartsWith("kategori "))
-                {
-                    var categoryName = message.Split(':')[1].Trim();
-                    if (string.IsNullOrWhiteSpace(categoryName))
-                        categoryName = message.Substring(9).Trim();
-                    return GetBooksByCategory(categoryName);
-                }
-
-                // Fiyat aralığı sorgulama
-                if (message.StartsWith("fiyat aralığı:") || message.StartsWith("fiyat araligi:"))
-                {
-                    var range = message.Split(':')[1].Trim().Split('-');
-                    if (range.Length == 2 && 
-                        double.TryParse(range[0].Trim(), out double minPrice) && 
-                        double.TryParse(range[1].Trim(), out double maxPrice))
-                    {
-                        return GetBooksByPriceRange(minPrice, maxPrice);
-                    }
-                    return "Lütfen fiyat aralığını şu formatta girin: 'fiyat aralığı: 50-200'";
-                }
-
-                // En ucuz ve en pahalı kitaplar
-                if (message == "en ucuz kitaplar")
-                {
-                    var products = _unitOfWork.Product.GetAll(inculdeProperties: "Category")
-                        .OrderBy(p => p.Price)
-                        .Take(5)
-                        .ToList();
-                    var minPrice = products.First().Price;
-                    var maxPrice = products.Last().Price;
-                    return GetBooksByPriceRange(minPrice, maxPrice);
-                }
-
-                if (message == "en pahalı kitaplar")
-                {
-                    var products = _unitOfWork.Product.GetAll(inculdeProperties: "Category")
-                        .OrderByDescending(p => p.Price)
-                        .Take(5)
-                        .ToList();
-                    var minPrice = products.Last().Price;
-                    var maxPrice = products.First().Price;
-                    return GetBooksByPriceRange(minPrice, maxPrice);
-                }
-
-                // Yardım komutu
-                if (message == "yardım")
-                {
-                    return @"Size nasıl yardımcı olabilirim? 🤝
-
-1. Kitap Listesi:
-   - 'kitaplar' - Tüm kitapları listeler
-   - 'hangi kitaplar var' - Tüm kitapları gösterir
-
-2. Kategori İşlemleri:
-   - 'kategoriler' - Tüm kategorileri listeler
-   - 'kategori: Roman' - Roman kategorisindeki kitapları gösterir
-
-3. Fiyat Sorguları:
-   - 'en ucuz kitaplar' - En ucuz 5 kitabı gösterir
-   - 'en pahalı kitaplar' - En pahalı 5 kitabı gösterir
-   - 'fiyat aralığı: 50-200' - 50TL ile 200TL arası kitapları gösterir
-
-Her türlü sorunuz için bana doğal dille sorabilirsiniz. Size yardımcı olmaktan mutluluk duyarım! 📚";
-                }
-
-                // Temel selamlaşma yanıtları
-                if (message == "merhaba" || message == "selam" || message == "hi" || message == "hello")
-                {
-                    return "Merhaba! 👋 Size nasıl yardımcı olabilirim? Kitaplarımız hakkında bilgi almak için 'yardım' yazabilirsiniz.";
-                }
-
-                if (message == "nasılsın" || message == "naber" || message == "napıyorsun")
-                {
-                    return "İyiyim, teşekkür ederim! 😊 Size kitaplarımız hakkında yardımcı olmak için buradayım. Nasıl yardımcı olabilirim?";
-                }
-
-                // Eğer özel komutlarla eşleşmezse, Ollama API'yi kullan
+                
                 var bookInfo = await GetBookInformation();
                 var systemPrompt = $"You are a customer representative at a bookstore. Respond in English. Store information: {bookInfo}";
 
                 var requestBody = new
-                        {
-                                model = "mistral",
-                                messages = new[]
-                                {
-                                    new { role = "system", content = systemPrompt },
-                                    new { role = "user", content = message }
-                                },
-                                stream = false
-                            };
+                {
+                    model = "mistral",
+                    messages = new[]
+                    {
+                        new { role = "system", content = systemPrompt },
+                        new { role = "user", content = message }
+                    },
+                    stream = false
+                };
 
                 var jsonContent = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
@@ -318,17 +199,18 @@ Her türlü sorunuz için bana doğal dille sorabilirsiniz. Size yardımcı olma
 
                     var responseObject = JsonSerializer.Deserialize<OllamaResponse>(responseString);
                     return responseObject?.message?.content?.Trim() ?? 
-                        "Üzgünüm, yanıt üretemiyorum. Lütfen 'yardım' yazarak kullanılabilir komutları görüntüleyin.";
+                        "Üzgünüm, yanıt üretemiyorum. Lütfen tekrar deneyin.";
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    return "Üzgünüm, şu anda size yardımcı olamıyorum. Lütfen 'yardım' yazarak kullanılabilir komutları görüntüleyin.";
+                    _logger.LogError(ex, "Error while communicating with Ollama API");
+                    return "Üzgünüm, şu anda size yardımcı olamıyorum. Lütfen daha sonra tekrar deneyin.";
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error");
-                return "Beklenmeyen bir hata oluştu. Lütfen 'yardım' yazarak kullanılabilir komutları görüntüleyin.";
+                _logger.LogError(ex, "Unexpected error in GetResponseFromOllama");
+                return "Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
             }
         }
     }
